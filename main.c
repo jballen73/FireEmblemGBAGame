@@ -15,6 +15,7 @@ typedef enum {
     APP_INIT,
     APP_MAP,
     APP_MENU,
+    APP_MOVE,
 } GBAState;
 
 int main(void) {
@@ -32,7 +33,9 @@ int main(void) {
     while(1) {
         // Load the current state of the buttons
         currentButtons = BUTTONS;
-
+        if (KEY_JUST_PRESSED(BUTTON_SELECT, currentButtons, previousButtons)) {
+            state = START;
+        }
         // TA-TODO: Manipulate the state machine below as needed.
         switch(state) {
         case START:
@@ -58,6 +61,9 @@ int main(void) {
             if (currentAppState.toMenu) {
                 state = APP_MENU;
             }
+            if (currentAppState.toMove) {
+                state = APP_MOVE;
+            }
             break;
         case APP_MENU:
             waitForVBlank();
@@ -67,6 +73,22 @@ int main(void) {
             currentAppState = nextAppState;
             if (currentAppState.toMap) {
                 state = APP_MAP;
+            }
+            if (currentAppState.toMove) {
+                state = APP_MOVE;
+            }  
+            break;
+        case APP_MOVE:
+            waitForVBlank();
+            nextAppState = processAppStateMove(&currentAppState, previousButtons, currentButtons);
+            drawAppStateMap(&nextAppState);
+
+            currentAppState = nextAppState;
+            if (currentAppState.toMap) {
+                state = APP_MAP;
+            }
+            if (currentAppState.toMenu) {
+                state = APP_MENU;
             }
             break;
         }

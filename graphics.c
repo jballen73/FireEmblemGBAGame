@@ -12,6 +12,8 @@ volatile OamEntry* menuAttack = &shadow[4];
 volatile OamEntry* menuItem = &shadow[2];
 volatile OamEntry* menuWait = &shadow[3];
 volatile OamEntry* menuSelector = &shadow[1];
+
+volatile OamEntry* blueUnit1 = &shadow[BASE_UNIT_INDEX];
 void hideSprites(void) {
     for(int i = 0; i < 128; i++) {
         shadow[i].attr0 = ATTR0_HIDE;
@@ -38,7 +40,7 @@ void graphicsInit(void) {
     menuItem->attr2 = ITEMMENU_PALETTE_ID | ITEMMENU_ID;
     menuWait->attr2 = WAITMENU_PALETTE_ID | WAITMENU_ID;
     menuSelector->attr2 = MENUSELECTOR_PALETTE_ID | MENUSELECTOR_ID;
-    
+    blueUnit1->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
 }
 static void drawTileSelector(int xpos, int ypos) {
     tileSelector->attr0 = ypos | SPRITES_PALETTE_TYPE | TILESELECTOR_SPRITE_SHAPE;
@@ -71,6 +73,18 @@ static void drawMenu(Menu* menu, int selectorPosition) {
         basey += 8;
     }
 }
+
+static void drawUnits(AppState *state) {
+    for (int i = 0; i < NUM_UNITS; i++) {
+        Unit *curUnit = state->unitList[i];
+        if (!curUnit->dead) {
+            shadow[curUnit->id + BASE_UNIT_INDEX].attr0 = curUnit->baseAttr0 | (curUnit->ypos * 16);
+            shadow[curUnit->id + BASE_UNIT_INDEX].attr1 = curUnit->baseAttr1 | (curUnit->xpos * 16);
+        } else {
+            shadow[curUnit->id + BASE_UNIT_INDEX].attr0 = ATTR0_HIDE;
+        }
+    }
+}
 static void hideMenu(void) {
     menuAttack->attr0 = ATTR0_HIDE;
     menuItem->attr0 = ATTR0_HIDE;
@@ -96,6 +110,7 @@ void undrawAppState(AppState *state) {
 void drawAppStateMap(AppState *state) {
     hideMenu();
     drawTileSelector(state->tSelector->xpos * 16, state->tSelector->ypos * 16);
+    drawUnits(state);
     drawSprites();
 }
 void drawAppStateMenu(AppState *state) {

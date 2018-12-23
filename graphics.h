@@ -3,6 +3,8 @@
 
 #include "logic.h"
 
+
+#define BASE_UNIT_INDEX (5)
 // This function will be used to draw everything about the state of your app
 // including the background and whatnot.
 void fullDrawAppState(AppState *state);

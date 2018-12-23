@@ -3,22 +3,39 @@
 
 #include "gba.h"
 
-#define GROUND_NONE (0)
-#define GROUND_REGULAR (1)
-#define GROUND_KILL (1<<4)
-#define COLLISION_BACK (1<<2)
-#define COLLISION_ADVANCE (1<<3)
-#define COLLISION_SAVE (1<<5)
-
-#define GROUND_KILL_VALUE (0x107d)
-#define WALL_BACK (0x7680)
-#define WALL_ADVANCE (0x26c4)
-#define SAVE_BLOCK (0x5134)
-
-#define NUM_ROOMS (19)
-#define STARTING_ROOM (0)
 
 
+#define NUM_UNITS (1)
+typedef enum {
+    REDTEAM,
+    BLUETEAM,
+} Team;
+typedef enum {
+    ATTACK,
+    ITEM,
+    WAIT,
+} MenuOption;
+
+
+
+typedef struct {
+    int dead;
+    int id;
+    Team team;
+    int xpos;
+    int ypos;
+    int hasMoved;
+    int baseAttr0;
+    int baseAttr1;
+
+    int maxHP;
+    int curHP;
+    int atk;
+    int def;
+    int skl;
+    int spd;
+    int move;
+} Unit;
 typedef struct {
     int xpos;
     int ypos;
@@ -32,14 +49,28 @@ typedef struct {
 
 } Menu;
 typedef struct {
+    int unitID;
+    int startX;
+    int startY;
+    int dx;
+    int dy;
+    int totalDist;
+
+} Move;
+typedef struct {
     // Store whether or not the game is over in this member:
     int gameOver;
 
     TileSelector *tSelector;
     Menu *menu;
+    Unit *unitList[NUM_UNITS];
+    Move *currentMove;
+    int map[15][10];
     int menuSelectorPosition;
+    int selected;
     int toMenu;
     int toMap;
+    int toMove;
 } AppState;
 
 
@@ -48,6 +79,7 @@ void initializeAppState(AppState *appState);
 // This function will be used to process app frames.
 AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
+AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 // If you have anything else you need accessible from outside the logic.c
 // file, you can add them here. You likely won't.
 #endif

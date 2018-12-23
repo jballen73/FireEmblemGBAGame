@@ -38,7 +38,6 @@ typedef unsigned char u8;
 #define WIDTH 240
 #define HEIGHT 160
 
-#define STANDARD_GROUND_HEIGHT 22
 // This is initialized in gba.c
 extern volatile unsigned short *videoBuffer;
 
