@@ -1,0 +1,4 @@
+*.o
+images/*.o
+*.elf
+emulator.log
