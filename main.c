@@ -14,6 +14,7 @@ typedef enum {
     START,  
     APP_INIT,
     APP_MAP,
+    APP_MENU,
 } GBAState;
 
 int main(void) {
@@ -48,11 +49,26 @@ int main(void) {
             state = APP_MAP;
             break;
         case APP_MAP:
-            waitForVBlank();
-            nextAppState = processAppState(&currentAppState, previousButtons, currentButtons);
-            drawAppState(&nextAppState);
 
+            waitForVBlank();
+            nextAppState = processAppStateMap(&currentAppState, previousButtons, currentButtons);
+            drawAppStateMap(&nextAppState);
+            
             currentAppState = nextAppState;
+            if (currentAppState.toMenu) {
+                state = APP_MENU;
+            }
+            break;
+        case APP_MENU:
+            waitForVBlank();
+            nextAppState = processAppStateMenu(&currentAppState, previousButtons, currentButtons);
+            drawAppStateMenu(&nextAppState);
+            
+            currentAppState = nextAppState;
+            if (currentAppState.toMap) {
+                state = APP_MAP;
+            }
+            break;
         }
 
         // Store the current state of the buttons

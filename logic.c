@@ -34,8 +34,20 @@ void initializeAppState(AppState* appState) {
 
 // This function processes your current app state and returns the new (i.e. next)
 // state of your application.
-AppState processAppState(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow) {
+AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow) {
     AppState nextAppState = *currentAppState;
+    nextAppState.toMap = 0;
+    if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
+        nextAppState.toMenu = 1;
+        nextAppState.menu->attack = 1;
+        nextAppState.menu->item = 1;
+        nextAppState.menu->wait = 1;
+        nextAppState.menu->numItems = 3;
+        nextAppState.menuSelectorPosition = 0;
+        return nextAppState;
+    }
+
+
     if (KEY_JUST_PRESSED(BUTTON_LEFT, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->tSelector->xpos > 0) {
             nextAppState.tSelector->xpos--;
@@ -56,5 +68,27 @@ AppState processAppState(AppState *currentAppState, u32 keysPressedBefore, u32 k
             nextAppState.tSelector->ypos--;
         }
     }
+    
+    return nextAppState;
+}
+
+AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toMenu = 0;
+    if (KEY_JUST_PRESSED(BUTTON_B, keysPressedNow, keysPressedBefore)) {
+        nextAppState.toMap = 1;
+        return nextAppState;
+    }
+    if (KEY_JUST_PRESSED(BUTTON_DOWN, keysPressedNow, keysPressedBefore)) {
+        if (currentAppState->menuSelectorPosition + 1 < currentAppState->menu->numItems) {
+            nextAppState.menuSelectorPosition++;
+        }
+    }
+    if (KEY_JUST_PRESSED(BUTTON_UP, keysPressedNow, keysPressedBefore)) {
+        if (currentAppState->menuSelectorPosition > 0) {
+            nextAppState.menuSelectorPosition--;
+        }
+    }
+    
     return nextAppState;
 }

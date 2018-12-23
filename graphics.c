@@ -8,10 +8,10 @@
 static void drawSprites(void);
 volatile OamEntry shadow[128];
 volatile OamEntry* tileSelector = &shadow[0];
-volatile OamEntry* menuAttack = &shadow[1];
+volatile OamEntry* menuAttack = &shadow[4];
 volatile OamEntry* menuItem = &shadow[2];
 volatile OamEntry* menuWait = &shadow[3];
-volatile OamEntry* menuSelector = &shadow[4];
+volatile OamEntry* menuSelector = &shadow[1];
 void hideSprites(void) {
     for(int i = 0; i < 128; i++) {
         shadow[i].attr0 = ATTR0_HIDE;
@@ -50,11 +50,38 @@ static void drawSprites(void) {
     DMA[3].dst = OAMMEM;
     DMA[3].cnt = 128*4 | DMA_ON;
 }
+static void drawMenu(Menu* menu, int selectorPosition) {
+    int basex = 104;
+    int basey = 56;
+    menuSelector->attr0 = (basey + (8*selectorPosition)) | SPRITES_PALETTE_TYPE | MENUSELECTOR_SPRITE_SHAPE;
+    menuSelector->attr1 = basex | MENUSELECTOR_SPRITE_SIZE;
+    if (menu->attack) {
+        menuAttack->attr0 = basey | SPRITES_PALETTE_TYPE | ATTACKMENU_SPRITE_SHAPE;
+        menuAttack->attr1 = basex | ATTACKMENU_SPRITE_SIZE;
+        basey += 8;
+    }
+    if (menu->item) {
+        menuItem->attr0 = basey | SPRITES_PALETTE_TYPE | ITEMMENU_SPRITE_SHAPE;
+        menuItem->attr1 = basex | ITEMMENU_SPRITE_SIZE;
+        basey += 8;
+    }
+    if (menu->wait) {
+        menuWait->attr0 = basey | SPRITES_PALETTE_TYPE | WAITMENU_SPRITE_SHAPE;
+        menuWait->attr1 = basex | WAITMENU_SPRITE_SIZE;
+        basey += 8;
+    }
+}
+static void hideMenu(void) {
+    menuAttack->attr0 = ATTR0_HIDE;
+    menuItem->attr0 = ATTR0_HIDE;
+    menuWait->attr0 = ATTR0_HIDE;
+    menuSelector->attr0 = ATTR0_HIDE;
+}
 // This function will be used to draw everything about the app
 // including the background and whatnot.
 void fullDrawAppState(AppState *state) {
     // TA-TODO: IMPLEMENT.
-    drawAppState(state);
+    UNUSED(state);
 }
 
 // This function will be used to undraw (i.e. erase) things that might
@@ -66,9 +93,14 @@ void undrawAppState(AppState *state) {
 
 // This function will be used to draw things that might have moved in a frame.
 // For example, in a Snake game, draw the snake, the food, the score.
-void drawAppState(AppState *state) {
-    // TA-TODO: IMPLEMENT.
+void drawAppStateMap(AppState *state) {
+    hideMenu();
     drawTileSelector(state->tSelector->xpos * 16, state->tSelector->ypos * 16);
     drawSprites();
 }
+void drawAppStateMenu(AppState *state) {
+    tileSelector->attr0 = ATTR0_HIDE;
+    drawMenu(state->menu, state->menuSelectorPosition);
+    drawSprites();
 
+}
