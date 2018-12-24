@@ -12,10 +12,13 @@ volatile OamEntry* menuAttack = &shadow[4];
 volatile OamEntry* menuItem = &shadow[2];
 volatile OamEntry* menuWait = &shadow[3];
 volatile OamEntry* menuSelector = &shadow[1];
+volatile OamEntry* yourTurn = &shadow[5];
+volatile OamEntry* enemyTurn = &shadow[6];
 
 volatile OamEntry* blueUnit1 = &shadow[BASE_UNIT_INDEX];
 volatile OamEntry* blueUnit2 = &shadow[BASE_UNIT_INDEX + 1];
 volatile OamEntry* redUnit1 = &shadow[BASE_UNIT_INDEX + 2];
+volatile OamEntry* redUnit2 = &shadow[BASE_UNIT_INDEX + 3];
 void hideSprites(void) {
     for(int i = 0; i < 128; i++) {
         shadow[i].attr0 = ATTR0_HIDE;
@@ -42,9 +45,12 @@ void graphicsInit(void) {
     menuItem->attr2 = ITEMMENU_PALETTE_ID | ITEMMENU_ID;
     menuWait->attr2 = WAITMENU_PALETTE_ID | WAITMENU_ID;
     menuSelector->attr2 = MENUSELECTOR_PALETTE_ID | MENUSELECTOR_ID;
+    yourTurn->attr2 = YOURTURN_PALETTE_ID | YOURTURN_ID;
+    enemyTurn->attr2 = ENEMYTURN_PALETTE_ID | ENEMYTURN_ID;
     blueUnit1->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     blueUnit2->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     redUnit1->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
+    redUnit2->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
 }
 static void drawTileSelector(int xpos, int ypos) {
     tileSelector->attr0 = ypos | SPRITES_PALETTE_TYPE | TILESELECTOR_SPRITE_SHAPE;
@@ -88,6 +94,25 @@ static void drawUnits(AppState *state) {
             shadow[curUnit->id + BASE_UNIT_INDEX].attr0 = ATTR0_HIDE;
         }
     }
+}
+
+void showYourTurn(void) {
+    yourTurn->attr0 = 64 | SPRITES_PALETTE_TYPE | YOURTURN_SPRITE_SHAPE;
+    yourTurn->attr1 = 104 | YOURTURN_SPRITE_SIZE;
+    drawSprites();
+}
+void hideYourTurn(void) {
+    yourTurn->attr0 = ATTR0_HIDE;
+    drawSprites();
+}
+void showEnemyTurn(void) {
+    enemyTurn->attr0 = 64 | SPRITES_PALETTE_TYPE | ENEMYTURN_SPRITE_SHAPE;
+    enemyTurn->attr1 = 104 | ENEMYTURN_SPRITE_SIZE;
+    drawSprites();
+}
+void hideEnemyTurn(void) {
+    enemyTurn->attr0 = ATTR0_HIDE;
+    drawSprites();
 }
 static void hideMenu(void) {
     menuAttack->attr0 = ATTR0_HIDE;

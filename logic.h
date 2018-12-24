@@ -5,7 +5,7 @@
 
 
 
-#define NUM_UNITS (3)
+#define NUM_UNITS (4)
 typedef enum {
     REDTEAM,
     BLUETEAM,

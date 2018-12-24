@@ -67,6 +67,13 @@ int main(void) {
                 state = APP_MOVE;
             }
             if (currentAppState.toEnemy) {
+                waitForVBlank();
+                showEnemyTurn();
+                for (int i = 0; i < 60; i++) {
+                    waitForVBlank();
+                    showEnemyTurn();
+                }
+                hideEnemyTurn();
                 state = APP_ENEMY;
             }
             break;
@@ -105,16 +112,25 @@ int main(void) {
                 state = APP_ENEMY_MOVE;
             }
             if (currentAppState.toMap) {
+                waitForVBlank();
+                showYourTurn();
+                for (int i = 0; i < 60; i++) {
+                    waitForVBlank();
+                    showYourTurn();
+                }
+                hideYourTurn();
                 state = APP_MAP;
             }
             break;
         case APP_ENEMY_MOVE:
             waitForVBlank();
-            nextAppState = processAppStateEnemyMove(&currentAppState);
-            drawAppStateMap(&nextAppState);
-            currentAppState = nextAppState;
-            if (currentAppState.toEnemy) {
-                state = APP_ENEMY;
+            if (vBlankCounter % 15 == 0) {
+                nextAppState = processAppStateEnemyMove(&currentAppState);
+                drawAppStateMap(&nextAppState);
+                currentAppState = nextAppState;
+                if (currentAppState.toEnemy) {
+                    state = APP_ENEMY;
+                }
             }
             break;
         }

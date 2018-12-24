@@ -85,6 +85,24 @@ void initializeAppState(AppState* appState) {
     redUnit1->move = 3;
     appState->map[redUnit1->xpos][redUnit1->ypos] = redUnit1->id;
 
+    Unit *redUnit2 = malloc(sizeof(Unit));
+    redUnit2->dead = 0;
+    redUnit2->id = 3;
+    redUnit2->team = REDTEAM;
+    redUnit2->xpos = 3;
+    redUnit2->ypos = 3;
+    redUnit2->hasMoved = 0;
+    redUnit2->baseAttr0 = SPRITES_PALETTE_TYPE | REDCHARACTERSPRITE_SPRITE_SHAPE;
+    redUnit2->baseAttr1 = REDCHARACTERSPRITE_SPRITE_SIZE;
+    redUnit2->maxHP = 11;
+    redUnit2->curHP = 11;
+    redUnit2->atk = 3;
+    redUnit2->def = 4;
+    redUnit2->skl = 2;
+    redUnit2->spd = 2;
+    redUnit2->move = 2;
+    appState->map[redUnit2->xpos][redUnit2->ypos] = redUnit2->id;
+
     appState->tSelector = newTileSelector;
     appState->menu = newMenu;
     appState->currentMove = newMove;
@@ -99,6 +117,7 @@ void initializeAppState(AppState* appState) {
     appState->unitList[0] = blueUnit1;
     appState->unitList[1] = blueUnit2;
     appState->unitList[2] = redUnit1;
+    appState->unitList[3] = redUnit2;
 }
 
 // TA-TODO: Add any process functions for sub-elements of your app here.

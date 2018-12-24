@@ -4,7 +4,7 @@
 #include "logic.h"
 
 
-#define BASE_UNIT_INDEX (5)
+#define BASE_UNIT_INDEX (7)
 // This function will be used to draw everything about the state of your app
 // including the background and whatnot.
 void fullDrawAppState(AppState *state);
@@ -22,4 +22,8 @@ void drawAppStateMenu(AppState *state);
 // file, you can add them here. You likely won't.
 void graphicsInit(void);
 void hideSprites(void);
+void showYourTurn(void);
+void hideYourTurn(void);
+void showEnemyTurn(void);
+void hideEnemyTurn(void);
 #endif
