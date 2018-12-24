@@ -49,6 +49,42 @@ void initializeAppState(AppState* appState) {
     blueUnit1->move = 4;
     appState->map[blueUnit1->xpos][blueUnit1->ypos] = blueUnit1->id;
 
+    Unit *blueUnit2 = malloc(sizeof(Unit));
+    blueUnit2->dead = 0;
+    blueUnit2->id = 1;
+    blueUnit2->team = BLUETEAM;
+    blueUnit2->xpos = 13;
+    blueUnit2->ypos = 7;
+    blueUnit2->hasMoved = 0;
+    blueUnit2->baseAttr0 = SPRITES_PALETTE_TYPE | BLUECHARACTERSPRITE_SPRITE_SHAPE;
+    blueUnit2->baseAttr1 = BLUECHARACTERSPRITE_SPRITE_SIZE;
+    blueUnit2->maxHP = 12;
+    blueUnit2->curHP = 12;
+    blueUnit2->atk = 6;
+    blueUnit2->def = 3;
+    blueUnit2->skl = 3;
+    blueUnit2->spd = 7;
+    blueUnit2->move = 4;
+    appState->map[blueUnit2->xpos][blueUnit2->ypos] = blueUnit2->id;
+
+    Unit *redUnit1 = malloc(sizeof(Unit));
+    redUnit1->dead = 0;
+    redUnit1->id = 2;
+    redUnit1->team = REDTEAM;
+    redUnit1->xpos = 2;
+    redUnit1->ypos = 1;
+    redUnit1->hasMoved = 0;
+    redUnit1->baseAttr0 = SPRITES_PALETTE_TYPE | REDCHARACTERSPRITE_SPRITE_SHAPE;
+    redUnit1->baseAttr1 = REDCHARACTERSPRITE_SPRITE_SIZE;
+    redUnit1->maxHP = 10;
+    redUnit1->curHP = 10;
+    redUnit1->atk = 4;
+    redUnit1->def = 2;
+    redUnit1->skl = 3;
+    redUnit1->spd = 3;
+    redUnit1->move = 3;
+    appState->map[redUnit1->xpos][redUnit1->ypos] = redUnit1->id;
+
     appState->tSelector = newTileSelector;
     appState->menu = newMenu;
     appState->currentMove = newMove;
@@ -56,9 +92,13 @@ void initializeAppState(AppState* appState) {
     appState->toMenu = 0;
     appState->toMap = 0;
     appState->toMove = 0;
+    appState->toEnemy = 0;
+    appState->toEnemyMove = 0;
     appState->selected = -1;
+    appState->targeted = -1;
     appState->unitList[0] = blueUnit1;
-
+    appState->unitList[1] = blueUnit2;
+    appState->unitList[2] = redUnit1;
 }
 
 // TA-TODO: Add any process functions for sub-elements of your app here.
@@ -130,7 +170,15 @@ AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u3
             }
         }
     }
-
+    if (KEY_JUST_PRESSED(BUTTON_R, keysPressedNow, keysPressedBefore)) {
+        for (int i = 0; i < NUM_UNITS; i++) {
+            if (currentAppState->unitList[i]->team == REDTEAM && !currentAppState->unitList[i]->dead) {
+                nextAppState.unitList[i]->hasMoved = 0;
+            }
+        }
+        nextAppState.toEnemy = 1;
+        return nextAppState;
+    }
     if (KEY_JUST_PRESSED(BUTTON_LEFT, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->tSelector->xpos > 0) {
             nextAppState.tSelector->xpos--;
@@ -287,5 +335,89 @@ AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u
             }
         }
     }
+    return nextAppState;
+}
+AppState processAppStateEnemy(AppState *currentAppState) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toEnemy = 0;
+    for (int i = 0; i < NUM_UNITS; i++) {
+        if (currentAppState->unitList[i]->team == REDTEAM && !currentAppState->unitList[i]->dead
+         && !currentAppState->unitList[i]->hasMoved) {
+             nextAppState.selected = i;
+             break;
+        }
+        if (i + 1 == NUM_UNITS) {
+            for (int i = 0; i < NUM_UNITS; i++) {
+                if (currentAppState->unitList[i]->team == BLUETEAM && !currentAppState->unitList[i]->dead) {
+                    nextAppState.unitList[i]->hasMoved = 0;
+                }
+            }
+            nextAppState.toMap = 1;
+            return nextAppState;
+        }
+    }
+    int dist = 30;
+    for (int i = 0; i < NUM_UNITS; i++) {
+        if (currentAppState->unitList[i]->team == BLUETEAM && !currentAppState->unitList[i]->dead) {
+            int newDistx = currentAppState->unitList[i]->xpos - currentAppState->unitList[nextAppState.selected]->xpos;
+            int newDisty = currentAppState->unitList[i]->ypos - currentAppState->unitList[nextAppState.selected]->ypos;
+            if (abs(newDistx) + abs(newDisty) < dist) {
+                dist = abs(newDistx) + abs(newDisty);
+                nextAppState.targeted = i;
+            }
+        }
+    }
+    nextAppState.toEnemyMove = 1;
+    nextAppState.currentMove->totalDist = 0;
+    return nextAppState;
+}
+AppState processAppStateEnemyMove(AppState *currentAppState) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toEnemyMove = 0;
+    if (currentAppState->currentMove->totalDist == currentAppState->unitList[currentAppState->selected]->move) {
+        nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
+        nextAppState.toEnemy = 1;
+        return nextAppState;
+    }
+    int beginX = currentAppState->unitList[currentAppState->selected]->xpos;
+    int beginY = currentAppState->unitList[currentAppState->selected]->ypos;
+    int xDist = currentAppState->unitList[currentAppState->targeted]->xpos - beginX;
+    int yDist = currentAppState->unitList[currentAppState->targeted]->ypos - beginY;
+    if (abs(xDist) + abs(yDist) == 1) {
+        nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
+        nextAppState.toEnemy = 1;
+        return nextAppState;
+    }
+    if (abs(xDist) > abs(yDist)) {
+        if (currentAppState->map[beginX + ((xDist > 0) ? 1 : -1)][beginY] == -1) {
+            nextAppState.map[beginX][beginY] = -1;
+            nextAppState.map[beginX + ((xDist > 0) ? 1 : -1)][beginY] = currentAppState->selected;
+            nextAppState.unitList[currentAppState->selected]->xpos += ((xDist > 0) ? 1 : -1);
+            nextAppState.currentMove->totalDist++;
+            return nextAppState;
+        } else if (currentAppState->map[beginX][beginY + ((yDist > 0) ? 1 : -1)] == -1) {
+            nextAppState.map[beginX][beginY] = -1;
+            nextAppState.map[beginX][beginY + ((yDist > 0) ? 1 : -1)] = currentAppState->selected;
+            nextAppState.currentMove->totalDist++;
+            nextAppState.unitList[currentAppState->selected]->ypos += ((yDist > 0) ? 1 : -1);
+            return nextAppState;
+        }
+    } else {
+        if (currentAppState->map[beginX][beginY + ((yDist > 0) ? 1 : -1)] == -1) {
+            nextAppState.map[beginX][beginY] = -1;
+            nextAppState.map[beginX][beginY + ((yDist > 0) ? 1 : -1)] = currentAppState->selected;
+            nextAppState.currentMove->totalDist++;
+            nextAppState.unitList[currentAppState->selected]->ypos += ((yDist > 0) ? 1 : -1);
+            return nextAppState;
+        } else if (currentAppState->map[beginX + ((xDist > 0) ? 1 : -1)][beginY] == -1) {
+            nextAppState.map[beginX][beginY] = -1;
+            nextAppState.map[beginX + ((xDist > 0) ? 1 : -1)][beginY] = currentAppState->selected;
+            nextAppState.currentMove->totalDist++;
+            nextAppState.unitList[currentAppState->selected]->xpos += ((xDist > 0) ? 1 : -1);
+            return nextAppState;
+        }
+    }
+    nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
+    nextAppState.toEnemy = 1;
     return nextAppState;
 }

@@ -16,6 +16,8 @@ typedef enum {
     APP_MAP,
     APP_MENU,
     APP_MOVE,
+    APP_ENEMY,
+    APP_ENEMY_MOVE,
 } GBAState;
 
 int main(void) {
@@ -64,6 +66,9 @@ int main(void) {
             if (currentAppState.toMove) {
                 state = APP_MOVE;
             }
+            if (currentAppState.toEnemy) {
+                state = APP_ENEMY;
+            }
             break;
         case APP_MENU:
             waitForVBlank();
@@ -89,6 +94,27 @@ int main(void) {
             }
             if (currentAppState.toMenu) {
                 state = APP_MENU;
+            }
+            break;
+        case APP_ENEMY:
+            waitForVBlank();
+            nextAppState = processAppStateEnemy(&currentAppState);
+            drawAppStateMap(&nextAppState);
+            currentAppState = nextAppState;
+            if (currentAppState.toEnemyMove) {
+                state = APP_ENEMY_MOVE;
+            }
+            if (currentAppState.toMap) {
+                state = APP_MAP;
+            }
+            break;
+        case APP_ENEMY_MOVE:
+            waitForVBlank();
+            nextAppState = processAppStateEnemyMove(&currentAppState);
+            drawAppStateMap(&nextAppState);
+            currentAppState = nextAppState;
+            if (currentAppState.toEnemy) {
+                state = APP_ENEMY;
             }
             break;
         }

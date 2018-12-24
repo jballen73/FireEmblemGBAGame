@@ -14,6 +14,8 @@ volatile OamEntry* menuWait = &shadow[3];
 volatile OamEntry* menuSelector = &shadow[1];
 
 volatile OamEntry* blueUnit1 = &shadow[BASE_UNIT_INDEX];
+volatile OamEntry* blueUnit2 = &shadow[BASE_UNIT_INDEX + 1];
+volatile OamEntry* redUnit1 = &shadow[BASE_UNIT_INDEX + 2];
 void hideSprites(void) {
     for(int i = 0; i < 128; i++) {
         shadow[i].attr0 = ATTR0_HIDE;
@@ -41,6 +43,8 @@ void graphicsInit(void) {
     menuWait->attr2 = WAITMENU_PALETTE_ID | WAITMENU_ID;
     menuSelector->attr2 = MENUSELECTOR_PALETTE_ID | MENUSELECTOR_ID;
     blueUnit1->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
+    blueUnit2->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
+    redUnit1->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
 }
 static void drawTileSelector(int xpos, int ypos) {
     tileSelector->attr0 = ypos | SPRITES_PALETTE_TYPE | TILESELECTOR_SPRITE_SHAPE;

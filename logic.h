@@ -5,7 +5,7 @@
 
 
 
-#define NUM_UNITS (1)
+#define NUM_UNITS (3)
 typedef enum {
     REDTEAM,
     BLUETEAM,
@@ -68,9 +68,12 @@ typedef struct {
     int map[15][10];
     int menuSelectorPosition;
     int selected;
+    int targeted;
     int toMenu;
     int toMap;
     int toMove;
+    int toEnemy;
+    int toEnemyMove;
 } AppState;
 
 
@@ -80,6 +83,8 @@ void initializeAppState(AppState *appState);
 AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
+AppState processAppStateEnemy(AppState *currentAppState);
+AppState processAppStateEnemyMove(AppState *currentAppState);
 // If you have anything else you need accessible from outside the logic.c
 // file, you can add them here. You likely won't.
 #endif
