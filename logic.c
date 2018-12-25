@@ -278,6 +278,9 @@ static void swapItemToFront(Unit *unit, int position) {
 static int min(int x, int y) {
     return (x < y) ? x : y;
 }
+static int max(int x, int y) {
+    return (x > y) ? x : y;
+}
 static void deleteItem(Unit *unit, int itemSlot) {
     if (itemSlot == 4 || itemSlot + 1 == unit->numItems) {
         unit->items[itemSlot] = NULL;
@@ -531,7 +534,6 @@ AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPress
     if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
         combatState->toAttack = 1;
         combatState->toMap = 0;
-        combatState->counter = 0;
         combatState->attacker = currentAppState->unitList[currentAppState->selected];
         combatState->defender = currentAppState->unitList[currentAppState->map[currentAppState->tSelector->xpos][currentAppState->tSelector->ypos]];
         nextAppState.tSelector->xpos = unitXPos;
@@ -699,12 +701,171 @@ AppState processAppStateEnemyMove(AppState *currentAppState) {
     nextAppState.toEnemy = 1;
     return nextAppState;
 }
+
+void initializeCombatState(CombatState *combatState) {
+    if (combatState->attacker->numItems && combatState->attacker->items[0]->type == WEAPON) {
+        combatState->atkDmg = max(combatState->attacker->atk + combatState->attacker->items[0]->strength - combatState->defender->def, 0);
+        combatState->atkHit = combatState->attacker->items[0]->accuracy + (2 * combatState->attacker->skl);
+        combatState->atkHit = min(100, max(combatState->atkHit, 0));
+        combatState->atkCrit = combatState->attacker->skl / 2;
+        if (combatState->attacker->spd - combatState->defender->spd >= 3) {
+            combatState->atkNum = 2;
+        } else {
+            combatState->atkNum = 1;
+        }
+    } else {
+        combatState->atkNum = -1;
+        combatState->atkHit = -1;
+        combatState->atkCrit = -1;
+        combatState->atkNum = 0;
+    }
+    if (combatState->defender->numItems && combatState->defender->items[0]->type == WEAPON) {
+        combatState->defDmg = max(combatState->defender->atk + combatState->defender->items[0]->strength - combatState->attacker->def, 0);
+        combatState->defHit = combatState->defender->items[0]->accuracy + (2 * combatState->defender->skl);
+        combatState->defHit = min(100, max(combatState->defHit, 0));
+        combatState->defCrit = combatState->defender->skl / 2;
+        if (combatState->defender->spd - combatState->attacker->spd >= 3) {
+            combatState->defNum = 2;
+        } else {
+            combatState->defNum = 1;
+        }
+    } else {
+        combatState->defNum = -1;
+        combatState->defHit = -1;
+        combatState->defCrit = -1;
+        combatState->defNum = 0;
+    }
+    combatState->state = 1;
+    combatState->redAtk = 0;
+    combatState->blueAtk = 0;
+}
+CombatState processRedAttack(CombatState *combatState) {
+    CombatState newCombatState = *combatState;
+    newCombatState.redAtk = 0;
+    if (combatState->attacker->team == REDTEAM) {
+        int result = randint(1, 101);
+        if (combatState->atkHit >= result) {
+            result = randint(1, 101);
+            if (combatState->atkCrit >= result) {
+                newCombatState.defender->curHP -= (3 * combatState->atkDmg);
+            } else {
+                newCombatState.defender->curHP -= combatState->atkDmg;
+            }
+            newCombatState.attacker->items[0]->uses--;
+            if (newCombatState.attacker->items[0]->uses <= 0) {
+                deleteItem(newCombatState.attacker, 0);
+                newCombatState.atkNum = 0;
+            }
+            if (newCombatState.defender->curHP <= 0) {
+                newCombatState.defender->curHP = 0;
+                newCombatState.defender->dead = 1;
+            }
+        }
+    } else {
+        int result = randint(1, 101);
+        if (combatState->defHit >= result) {
+            result = randint(1, 101);
+            if (combatState->defCrit >= result) {
+                newCombatState.attacker->curHP -= (3 * combatState->defDmg);
+            } else {
+                newCombatState.attacker->curHP -= combatState->defDmg;
+            }
+            newCombatState.defender->items[0]->uses--;
+            if (newCombatState.defender->items[0]->uses <= 0) {
+                deleteItem(newCombatState.defender, 0);
+                newCombatState.defNum = 0;
+            }
+            if (newCombatState.attacker->curHP <= 0) {
+                newCombatState.attacker->curHP = 0;
+                newCombatState.attacker->dead = 1;
+            }
+        }
+    }
+    return newCombatState;
+}
+CombatState processBlueAttack(CombatState *combatState) {
+    CombatState newCombatState = *combatState;
+    newCombatState.blueAtk = 0;
+    if (combatState->attacker->team == BLUETEAM) {
+        int result = randint(1, 101);
+        if (combatState->atkHit >= result) {
+            result = randint(1, 101);
+            if (combatState->atkCrit >= result) {
+                newCombatState.defender->curHP -= (3 * combatState->atkDmg);
+            } else {
+                newCombatState.defender->curHP -= combatState->atkDmg;
+            }
+            newCombatState.attacker->items[0]->uses--;
+            if (newCombatState.attacker->items[0]->uses <= 0) {
+                deleteItem(newCombatState.attacker, 0);
+                newCombatState.atkNum = 0;
+            }
+            if (newCombatState.defender->curHP <= 0) {
+                newCombatState.defender->dead = 1;
+                newCombatState.defender->curHP = 0;
+            }
+        }
+    } else {
+        int result = randint(1, 101);
+        if (combatState->defHit >= result) {
+            result = randint(1, 101);
+            if (combatState->defCrit >= result) {
+                newCombatState.attacker->curHP -= (3 * combatState->defDmg);
+            } else {
+                newCombatState.attacker->curHP -= combatState->defDmg;
+            }
+            newCombatState.defender->items[0]->uses--;
+            if (newCombatState.defender->items[0]->uses <= 0) {
+                deleteItem(newCombatState.defender, 0);
+                newCombatState.defNum = 0;
+            }
+            if (newCombatState.attacker->curHP <= 0) {
+                newCombatState.attacker->curHP = 0;
+                newCombatState.attacker->dead = 1;
+            }
+        }
+    }
+    return newCombatState;
+}
 CombatState processCombatState(CombatState *combatState) {
     CombatState newCombatState = *combatState;
     newCombatState.toAttack = 0;
-    newCombatState.counter++;
-    if (newCombatState.counter > 120) {
+    if (combatState->state > 2 || combatState->attacker->dead || combatState->defender->dead) {
         newCombatState.toMap = 1;
+        return newCombatState;
     }
+    switch(combatState->state % 2) {
+        case 1:
+            if (combatState->atkNum) {
+                newCombatState.atkNum--;
+                if (combatState->attacker->team == REDTEAM) {
+                    newCombatState.redAtk = 1;
+                } else {
+                    newCombatState.blueAtk = 1;
+                }
+            }
+            break;
+        case 0:
+            if (combatState->defNum) {
+                newCombatState.defNum--;
+                if (combatState->defender->team == REDTEAM) {
+                    newCombatState.redAtk = 1;
+                } else {
+                    newCombatState.blueAtk = 1;
+                }
+            }
+            break;
+    }
+    newCombatState.state++;
     return newCombatState;
+}
+AppState processPostCombat(AppState *currentAppState, CombatState *combatState) {
+    AppState newAppState = *currentAppState;
+    if (combatState->attacker->dead) {
+        newAppState.map[combatState->attacker->xpos][combatState->attacker->ypos] = -1;
+    }
+    if (combatState->defender->dead) {
+        newAppState.map[combatState->defender->xpos][combatState->defender->ypos] = -1;
+    }
+    return newAppState;
 }

@@ -30,6 +30,37 @@ static void drawSprites(void) {
 void drawCombatBackground(void) {
     drawFullScreenImageDMA(BattleBackground);
 }
+static void drawPartialBackground(void) {
+    drawImageDMA(0, 0, 240, 126, BattleBackground);
+}
+void doRedAttack(void) {
+    for (int i = 0; i <= 20; i++) {
+        waitForVBlank();
+        redSprite->attr1 = (28 + i) | REDLARGESPRITE_SPRITE_SIZE;
+        drawSprites();
+        waitForVBlank();
+    }
+    for (int i = 20; i >= 0; i--) {
+        waitForVBlank();
+        redSprite->attr1 = (28 + i) | REDLARGESPRITE_SPRITE_SIZE;
+        drawSprites();
+        waitForVBlank();
+    }
+}
+void doBlueAttack(void) {
+    for (int i = 0; i <= 20; i++) {
+        waitForVBlank();
+        blueSprite->attr1 = (168 - i) | BLUELARGESPRITE_SPRITE_SIZE;
+        drawSprites();
+        waitForVBlank();
+    }
+    for (int i = 20; i >= 0; i--) {
+        waitForVBlank();
+        blueSprite->attr1 = (168 - i) | BLUELARGESPRITE_SPRITE_SIZE;
+        drawSprites();
+        waitForVBlank();
+    }
+}
 static void drawUnits(void) {
     redSprite->attr0 = 57 | SPRITES2_PALETTE_TYPE | REDLARGESPRITE_SPRITE_SHAPE;
     redSprite->attr1 = 28 | REDLARGESPRITE_SPRITE_SIZE;
@@ -38,9 +69,13 @@ static void drawUnits(void) {
 }
 static void drawHPBars(Unit *redUnit, Unit *blueUnit) {
     drawRectDMA(5, 112, (redUnit->maxHP + 1) * 2, 9, BLACK);
-    drawRectDMA(6, 113, redUnit->curHP * 2, 7, RED);
+    if (redUnit->curHP) {
+        drawRectDMA(6, 113, redUnit->curHP * 2, 7, RED);
+    }
     drawRectDMA(173 + (62 - ((blueUnit->maxHP + 1) * 2)), 112, (blueUnit->maxHP + 1) * 2, 9, BLACK);
-    drawRectDMA(174 + (62 - ((blueUnit->maxHP + 1) * 2)), 113, blueUnit->curHP * 2, 7, BLUE);
+    if (blueUnit->curHP) {
+        drawRectDMA(174 + (62 - ((blueUnit->maxHP + 1) * 2)), 113, blueUnit->curHP * 2, 7, BLUE);
+    }
 }
 static void printHPNums(Unit *redUnit, Unit *blueUnit) {
     char redHP[2];
@@ -51,7 +86,52 @@ static void printHPNums(Unit *redUnit, Unit *blueUnit) {
     drawString(98, 112, redHP, BLACK);
     drawString(132, 112, blueHP, BLACK);
 }
+static void printRedNums(int dmg, int hit, int crit) {
+    char redDmg[3];
+    char redHit[3];
+    char redCrit[3];
+    if (dmg > -1) {
+        sprintf(redDmg, "%d", dmg);
+        sprintf(redHit, "%d", hit);
+        sprintf(redCrit, "%d", crit);
+    } else {
+        sprintf(redDmg, "--");
+        sprintf(redHit, "--");
+        sprintf(redCrit, "--");
+    }
+    drawString(50, 129, redDmg, BLACK);
+    drawString(50, 139, redHit, BLACK);
+    drawString(50, 150, redCrit, BLACK);
+}
+static void printBlueNums(int dmg, int hit, int crit) {
+    char blueDmg[3];
+    char blueHit[3];
+    char blueCrit[3];
+    if (dmg > -1) {
+        sprintf(blueDmg, "%d", dmg);
+        sprintf(blueHit, "%d", hit);
+        sprintf(blueCrit, "%d", crit);
+    } else {
+        sprintf(blueDmg, "--");
+        sprintf(blueHit, "--");
+        sprintf(blueCrit, "--");
+    }
+    drawString(218, 129, blueDmg, BLACK);
+    drawString(218, 139, blueHit, BLACK);
+    drawString(218, 150, blueCrit, BLACK);
+}
+void fullDrawCombatState(CombatState *state) {
+    if (state->attacker->team == BLUETEAM) {
+        printBlueNums(state->atkDmg, state->atkHit, state->atkCrit);
+        printRedNums(state->defDmg, state->defHit, state->defCrit);
+    } else {
+        printRedNums(state->atkDmg, state->atkHit, state->atkCrit);
+        printBlueNums(state->defDmg, state->defHit, state->defCrit);
+    }
+    drawCombatState(state);
+}
 void drawCombatState(CombatState *state) {
+    drawPartialBackground();
     drawUnits();
     drawSprites();
     if (state->attacker->team == BLUETEAM) {

@@ -70,7 +70,18 @@ typedef struct {
     Unit *defender;
     int toAttack;
     int toMap;
-    int counter;
+    int atkHit;
+    int atkDmg;
+    int atkCrit;
+    int atkNum;
+    int defHit;
+    int defDmg;
+    int defCrit;
+    int defNum;
+
+    int state;
+    int redAtk;
+    int blueAtk;
 } CombatState;
 typedef struct {
     // Store whether or not the game is over in this member:
@@ -97,6 +108,7 @@ typedef struct {
 
 // This function can initialize an unused AppState struct.
 void initializeAppState(AppState *appState);
+void initializeCombatState(CombatState *combatState);
 // This function will be used to process app frames.
 AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
@@ -106,6 +118,10 @@ AppState processAppStateEnemyMove(AppState *currentAppState);
 AppState processAppStateItemMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow, CombatState *combatState);
 CombatState processCombatState(CombatState *combatState);
+CombatState processRedAttack(CombatState *combatState);
+CombatState processBlueAttack(CombatState *combatState);
+AppState processPostCombat(AppState *currentAppState, CombatState *combatState);
+
 // If you have anything else you need accessible from outside the logic.c
 // file, you can add them here. You likely won't.
 #endif

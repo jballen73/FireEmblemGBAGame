@@ -24,6 +24,8 @@ typedef enum {
     APP_COMBAT_INIT,
     APP_COMBAT,
     APP_COMBAT_END,
+    APP_RED_ATK,
+    APP_BLUE_ATK,
 } GBAState;
 
 int main(void) {
@@ -41,6 +43,7 @@ int main(void) {
     while(1) {
         // Load the current state of the buttons
         currentButtons = BUTTONS;
+        randint(0, 2);
         if (KEY_JUST_PRESSED(BUTTON_SELECT, currentButtons, previousButtons)) {
             state = START;
         }
@@ -180,7 +183,13 @@ int main(void) {
             graphics2Init();
             waitForVBlank();
             drawCombatBackground();
-            drawCombatState(&combatState);
+            initializeCombatState(&combatState);
+
+            fullDrawCombatState(&combatState);
+            for (int i = 0; i < 30; i++) {
+                waitForVBlank();
+                drawCombatState(&combatState);
+            }
             state = APP_COMBAT;
             break;
         case APP_COMBAT:
@@ -190,10 +199,35 @@ int main(void) {
             if (combatState.toMap) {
                 state = APP_COMBAT_END;
             }
+            if (combatState.redAtk) {
+                state = APP_RED_ATK;
+            }
+            if (combatState.blueAtk) {
+                state = APP_BLUE_ATK;
+            }
+            break;
+        case APP_RED_ATK:
+            doRedAttack();
+            combatState = processRedAttack(&combatState);
+            for (int i = 0; i < 30; i++) {
+                waitForVBlank();
+                drawCombatState(&combatState);
+            }
+            state = APP_COMBAT;
+            break;
+        case APP_BLUE_ATK:
+            doBlueAttack();
+            combatState = processBlueAttack(&combatState);
+            for (int i = 0; i < 30; i++) {
+                waitForVBlank();
+                drawCombatState(&combatState);
+            }
+            state = APP_COMBAT;
             break;
         case APP_COMBAT_END:
             combatState.toMap = 0;
             graphicsInit();
+            currentAppState = processPostCombat(&currentAppState, &combatState);
             fullDrawAppState(&currentAppState);
             state = APP_MAP;
             break;
