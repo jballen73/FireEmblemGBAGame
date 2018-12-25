@@ -19,6 +19,7 @@ typedef enum {
     APP_MOVE,
     APP_ENEMY,
     APP_ENEMY_MOVE,
+    APP_ENEMY_TARGETING,
     APP_ATTACK_TARGETING,
     APP_ITEM_MENU,
     APP_COMBAT_INIT,
@@ -58,8 +59,9 @@ int main(void) {
             break;
         case APP_INIT:
             waitForVBlank();
-            fillScreenDMA(WHITE);
+            
             initializeAppState(&currentAppState);
+            fullDrawAppState(&currentAppState);
             state = APP_MAP;
             break;
         case APP_MAP:
@@ -165,6 +167,21 @@ int main(void) {
                 if (currentAppState.toEnemy) {
                     state = APP_ENEMY;
                 }
+                if (currentAppState.toEnemyTargeting) {
+                    state = APP_ENEMY_TARGETING;
+                }
+            }
+            break;
+        case APP_ENEMY_TARGETING:
+            waitForVBlank();
+            nextAppState = processAppStateEnemyTargeting(&currentAppState, &combatState);
+            drawAppStateMap(&nextAppState);
+            currentAppState = nextAppState;
+            if (currentAppState.toEnemy) {
+                state = APP_ENEMY;
+            }
+            if (combatState.toAttack) { 
+                state = APP_COMBAT_INIT;
             }
             break;
         case APP_ATTACK_TARGETING:
@@ -229,7 +246,11 @@ int main(void) {
             graphicsInit();
             currentAppState = processPostCombat(&currentAppState, &combatState);
             fullDrawAppState(&currentAppState);
-            state = APP_MAP;
+            if (currentAppState.toEnemy) {
+                state = APP_ENEMY;
+            } else {
+                state = APP_MAP;
+            }
             break;
         }
 

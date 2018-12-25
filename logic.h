@@ -82,6 +82,7 @@ typedef struct {
     int state;
     int redAtk;
     int blueAtk;
+    int enemy;
 } CombatState;
 typedef struct {
     // Store whether or not the game is over in this member:
@@ -103,6 +104,7 @@ typedef struct {
     int toItemMenu;
     int toEnemy;
     int toEnemyMove;
+    int toEnemyTargeting;
 } AppState;
 
 
@@ -115,6 +117,7 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
 AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateEnemy(AppState *currentAppState);
 AppState processAppStateEnemyMove(AppState *currentAppState);
+AppState processAppStateEnemyTargeting(AppState *currentAppState, CombatState *combatState);
 AppState processAppStateItemMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow, CombatState *combatState);
 CombatState processCombatState(CombatState *combatState);

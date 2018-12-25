@@ -131,6 +131,7 @@ void initializeAppState(AppState* appState) {
     appState->toItemMenu = 0;
     appState->toEnemy = 0;
     appState->toEnemyMove = 0;
+    appState->toEnemyTargeting = 0;
     appState->selected = -1;
     appState->targeted = -1;
     appState->unitList[0] = blueUnit1;
@@ -225,11 +226,6 @@ static int downEnemy(AppState *state) {
 }
 static int isAdjacentEnemy(AppState *state) {
     return (leftEnemy(state) + rightEnemy(state) + upEnemy(state) + downEnemy(state) == -4) ? 0 : 1;
-    // if (leftEnemy(state) != -1) {return 1;}
-    // if (rightEnemy(state) != -1) {return 1;}
-    // if (upEnemy(state) != -1) {return 1;}
-    // if (downEnemy(state) != 1) {return 1;}
-    // return 0;
 }
 static int getPositionNum(Item *item) {
     switch(item->strength) {
@@ -515,6 +511,32 @@ AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u
     }
     return nextAppState;
 }
+AppState processAppStateEnemyTargeting(AppState *currentAppState, CombatState *combatState) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toEnemyTargeting = 0;
+    if (!isAdjacentEnemy(currentAppState)) {
+        nextAppState.toEnemy = 1;
+        return nextAppState;
+    }
+    combatState->attacker = currentAppState->unitList[currentAppState->selected];
+    int leftHP = (leftEnemy(currentAppState) != -1) ? currentAppState->unitList[leftEnemy(currentAppState)]->curHP : 999;
+    int rightHP = (rightEnemy(currentAppState) != -1) ? currentAppState->unitList[rightEnemy(currentAppState)]->curHP : 999;
+    int upHP = (upEnemy(currentAppState) != -1) ? currentAppState->unitList[upEnemy(currentAppState)]->curHP : 999;
+    int downHP = (downEnemy(currentAppState) != -1) ? currentAppState->unitList[downEnemy(currentAppState)]->curHP : 999;
+    if (leftHP <= rightHP && leftHP <= upHP && leftHP <= downHP) {
+        combatState->defender = currentAppState->unitList[leftEnemy(currentAppState)];
+    } else if (downHP <= upHP && downHP <= rightHP) {
+        combatState->defender = currentAppState->unitList[downEnemy(currentAppState)];
+    } else if (rightHP <= upHP) {
+        combatState->defender = currentAppState->unitList[rightEnemy(currentAppState)];
+    } else {
+        combatState->defender = currentAppState->unitList[upEnemy(currentAppState)];
+    }
+    combatState->toAttack = 1;
+    combatState->toMap = 0;
+    combatState->enemy = 1;
+    return nextAppState;
+}
 AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, 
     u32 keysPressedNow, CombatState *combatState) {
     AppState nextAppState = *currentAppState;
@@ -534,6 +556,7 @@ AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPress
     if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
         combatState->toAttack = 1;
         combatState->toMap = 0;
+        combatState->enemy = 0;
         combatState->attacker = currentAppState->unitList[currentAppState->selected];
         combatState->defender = currentAppState->unitList[currentAppState->map[currentAppState->tSelector->xpos][currentAppState->tSelector->ypos]];
         nextAppState.tSelector->xpos = unitXPos;
@@ -656,7 +679,7 @@ AppState processAppStateEnemyMove(AppState *currentAppState) {
     nextAppState.toEnemyMove = 0;
     if (currentAppState->currentMove->totalDist == currentAppState->unitList[currentAppState->selected]->move) {
         nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
-        nextAppState.toEnemy = 1;
+        nextAppState.toEnemyTargeting = 1;
         return nextAppState;
     }
     int beginX = currentAppState->unitList[currentAppState->selected]->xpos;
@@ -665,7 +688,7 @@ AppState processAppStateEnemyMove(AppState *currentAppState) {
     int yDist = currentAppState->unitList[currentAppState->targeted]->ypos - beginY;
     if (abs(xDist) + abs(yDist) == 1) {
         nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
-        nextAppState.toEnemy = 1;
+        nextAppState.toEnemyTargeting = 1;
         return nextAppState;
     }
     if (abs(xDist) > abs(yDist)) {
@@ -698,7 +721,7 @@ AppState processAppStateEnemyMove(AppState *currentAppState) {
         }
     }
     nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
-    nextAppState.toEnemy = 1;
+    nextAppState.toEnemyTargeting = 1;
     return nextAppState;
 }
 
@@ -866,6 +889,11 @@ AppState processPostCombat(AppState *currentAppState, CombatState *combatState) 
     }
     if (combatState->defender->dead) {
         newAppState.map[combatState->defender->xpos][combatState->defender->ypos] = -1;
+    }
+    if (combatState->enemy) {
+        newAppState.toEnemy = 1;
+    } else {
+        newAppState.toMap = 1;
     }
     return newAppState;
 }
