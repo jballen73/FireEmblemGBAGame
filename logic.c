@@ -54,7 +54,8 @@ void initializeAppState(AppState* appState) {
     blueUnit1->spd = 6;
     blueUnit1->move = 4;
     blueUnit1->items[0] = newIronSword();
-    blueUnit1->numItems = 1;
+    blueUnit1->items[1] = newVulnerary();
+    blueUnit1->numItems = 2;
     appState->map[blueUnit1->xpos][blueUnit1->ypos] = blueUnit1->id;
 
     Unit *blueUnit2 = malloc(sizeof(Unit));
@@ -78,6 +79,26 @@ void initializeAppState(AppState* appState) {
     blueUnit2->items[2] = newIronSword();
     blueUnit2->numItems = 3;
     appState->map[blueUnit2->xpos][blueUnit2->ypos] = blueUnit2->id;
+
+    Unit *blueUnit3 = malloc(sizeof(Unit));
+    blueUnit3->dead = 0;
+    blueUnit3->id = 4;
+    blueUnit3->team = BLUETEAM;
+    blueUnit3->xpos = 13;
+    blueUnit3->ypos = 9;
+    blueUnit3->hasMoved = 0;
+    blueUnit3->baseAttr0 = SPRITES_PALETTE_TYPE | BLUECHARACTERSPRITE_SPRITE_SHAPE;
+    blueUnit3->baseAttr1 = BLUECHARACTERSPRITE_SPRITE_SIZE;
+    blueUnit3->maxHP = 17;
+    blueUnit3->curHP = 17;
+    blueUnit3->atk = 2;
+    blueUnit3->def = 2;
+    blueUnit3->skl = 6;
+    blueUnit3->spd = 1;
+    blueUnit3->move = 3;
+    blueUnit3->items[0] = newIronSword();
+    blueUnit3->numItems = 1;
+    appState->map[blueUnit3->xpos][blueUnit3->ypos] = blueUnit3->id;
 
     Unit *redUnit1 = malloc(sizeof(Unit));
     redUnit1->dead = 0;
@@ -119,6 +140,46 @@ void initializeAppState(AppState* appState) {
     redUnit2->numItems = 1;
     appState->map[redUnit2->xpos][redUnit2->ypos] = redUnit2->id;
 
+    Unit *redUnit3 = malloc(sizeof(Unit));
+    redUnit3->dead = 0;
+    redUnit3->id = 5;
+    redUnit3->team = REDTEAM;
+    redUnit3->xpos = 1;
+    redUnit3->ypos = 2;
+    redUnit3->hasMoved = 0;
+    redUnit3->baseAttr0 = SPRITES_PALETTE_TYPE | REDCHARACTERSPRITE_SPRITE_SHAPE;
+    redUnit3->baseAttr1 = REDCHARACTERSPRITE_SPRITE_SIZE;
+    redUnit3->maxHP = 9;
+    redUnit3->curHP = 9;
+    redUnit3->atk = 3;
+    redUnit3->def = 2;
+    redUnit3->skl = 2;
+    redUnit3->spd = 6;
+    redUnit3->move = 4;
+    redUnit3->items[0] = newIronSword();
+    redUnit3->numItems = 1;
+    appState->map[redUnit3->xpos][redUnit3->ypos] = redUnit3->id;
+
+    Unit *redUnit4 = malloc(sizeof(Unit));
+    redUnit4->dead = 0;
+    redUnit4->id = 6;
+    redUnit4->team = REDTEAM;
+    redUnit4->xpos = 0;
+    redUnit4->ypos = 0;
+    redUnit4->hasMoved = 0;
+    redUnit4->baseAttr0 = SPRITES_PALETTE_TYPE | REDCHARACTERSPRITE_SPRITE_SHAPE;
+    redUnit4->baseAttr1 = REDCHARACTERSPRITE_SPRITE_SIZE;
+    redUnit4->maxHP = 10;
+    redUnit4->curHP = 10;
+    redUnit4->atk = 4;
+    redUnit4->def = 1;
+    redUnit4->skl = 6;
+    redUnit4->spd = 2;
+    redUnit4->move = 3;
+    redUnit4->items[0] = newSteelSword();
+    redUnit4->numItems = 1;
+    appState->map[redUnit4->xpos][redUnit4->ypos] = redUnit4->id;
+
     appState->tSelector = newTileSelector;
     appState->menu = newMenu;
     appState->itemMenu = newItemMenu;
@@ -138,6 +199,9 @@ void initializeAppState(AppState* appState) {
     appState->unitList[1] = blueUnit2;
     appState->unitList[2] = redUnit1;
     appState->unitList[3] = redUnit2;
+    appState->unitList[4] = blueUnit3;
+    appState->unitList[5] = redUnit3;
+    appState->unitList[6] = redUnit4;
 }
 
 // TA-TODO: Add any process functions for sub-elements of your app here.
@@ -388,11 +452,15 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
     if (KEY_JUST_PRESSED(BUTTON_DOWN, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->menuSelectorPosition + 1 < currentAppState->menu->numItems) {
             nextAppState.menuSelectorPosition++;
+        } else {
+            nextAppState.menuSelectorPosition = 0;
         }
     }
     if (KEY_JUST_PRESSED(BUTTON_UP, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->menuSelectorPosition > 0) {
             nextAppState.menuSelectorPosition--;
+        } else {
+            nextAppState.menuSelectorPosition = currentAppState->menu->numItems - 1;
         }
     }
     
@@ -631,11 +699,15 @@ AppState processAppStateItemMenu(AppState *currentAppState, u32 keysPressedBefor
     if (KEY_JUST_PRESSED(BUTTON_DOWN, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->menuSelectorPosition + 1 < currentAppState->unitList[currentAppState->selected]->numItems) {
             nextAppState.menuSelectorPosition++;
+        } else {
+            nextAppState.menuSelectorPosition = 0;
         }
     }
     if (KEY_JUST_PRESSED(BUTTON_UP, keysPressedNow, keysPressedBefore)) {
         if (currentAppState->menuSelectorPosition > 0) {
             nextAppState.menuSelectorPosition--;
+        } else {
+            nextAppState.menuSelectorPosition = currentAppState->unitList[currentAppState->selected]->numItems - 1;
         }
     }
     return nextAppState;
@@ -853,7 +925,7 @@ CombatState processBlueAttack(CombatState *combatState) {
 CombatState processCombatState(CombatState *combatState) {
     CombatState newCombatState = *combatState;
     newCombatState.toAttack = 0;
-    if (combatState->state > 2 || combatState->attacker->dead || combatState->defender->dead) {
+    if (combatState->state > 4 || combatState->attacker->dead || combatState->defender->dead) {
         newCombatState.toMap = 1;
         return newCombatState;
     }

@@ -23,6 +23,9 @@ volatile OamEntry* blueUnit1 = &shadow[BASE_UNIT_INDEX];
 volatile OamEntry* blueUnit2 = &shadow[BASE_UNIT_INDEX + 1];
 volatile OamEntry* redUnit1 = &shadow[BASE_UNIT_INDEX + 2];
 volatile OamEntry* redUnit2 = &shadow[BASE_UNIT_INDEX + 3];
+volatile OamEntry* blueUnit3 = &shadow[BASE_UNIT_INDEX + 4];
+volatile OamEntry* redUnit3 = &shadow[BASE_UNIT_INDEX + 5];
+volatile OamEntry* redUnit4 = &shadow[BASE_UNIT_INDEX + 6];
 void hideSprites(void) {
     for(int i = 0; i < 128; i++) {
         shadow[i].attr0 = ATTR0_HIDE;
@@ -56,8 +59,11 @@ void graphicsInit(void) {
     vulneraryMenu->attr2 = VULNERARYMENU_PALETTE_ID | VULNERARYMENU_ID;
     blueUnit1->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     blueUnit2->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
+    blueUnit3->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     redUnit1->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
     redUnit2->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
+    redUnit3->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
+    redUnit4->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
 }
 static void drawTileSelector(int xpos, int ypos) {
     tileSelector->attr0 = ypos | SPRITES_PALETTE_TYPE | TILESELECTOR_SPRITE_SHAPE;

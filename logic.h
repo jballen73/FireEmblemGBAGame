@@ -5,7 +5,7 @@
 #include "items.h"
 
 
-#define NUM_UNITS (4)
+#define NUM_UNITS (7)
 typedef enum {
     REDTEAM,
     BLUETEAM,
