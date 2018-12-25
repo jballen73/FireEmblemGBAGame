@@ -16,6 +16,7 @@ void initializeAppState(AppState* appState) {
     TileSelector *newTileSelector = malloc(sizeof(TileSelector));
     newTileSelector->xpos = 0;
     newTileSelector->ypos = 0;
+    newTileSelector->show = 1;
 
     Menu *newMenu = malloc(sizeof(Menu));
     newMenu->attack = 0;
@@ -110,6 +111,7 @@ void initializeAppState(AppState* appState) {
     appState->toMenu = 0;
     appState->toMap = 0;
     appState->toMove = 0;
+    appState->toAttackTargeting = 0;
     appState->toEnemy = 0;
     appState->toEnemyMove = 0;
     appState->selected = -1;
@@ -164,7 +166,54 @@ static MenuOption parseMenuOption(AppState *state) {
     }
     return WAIT;
 }
-
+static int leftEnemy(AppState *state) {
+    int unitXPos = state->unitList[state->selected]->xpos;
+    int unitYPos = state->unitList[state->selected]->ypos;
+    Team unitTeam = state->unitList[state->selected]->team;
+    if (unitXPos > 0 && state->map[unitXPos - 1][unitYPos] != -1 
+    && state->unitList[state->map[unitXPos - 1][unitYPos]]->team != unitTeam) {
+        return state->map[unitXPos - 1][unitYPos];
+    }
+    return -1;
+}
+static int rightEnemy(AppState *state) {
+    int unitXPos = state->unitList[state->selected]->xpos;
+    int unitYPos = state->unitList[state->selected]->ypos;
+    Team unitTeam = state->unitList[state->selected]->team;
+    if (unitXPos < 14 && state->map[unitXPos + 1][unitYPos] != -1 
+    && state->unitList[state->map[unitXPos + 1][unitYPos]]->team != unitTeam) {
+        return state->map[unitXPos + 1][unitYPos];
+    }
+    return -1;
+}
+static int upEnemy(AppState *state) {
+    int unitXPos = state->unitList[state->selected]->xpos;
+    int unitYPos = state->unitList[state->selected]->ypos;
+    Team unitTeam = state->unitList[state->selected]->team;
+    if (unitYPos > 0 && state->map[unitXPos][unitYPos - 1] != -1 
+    && state->unitList[state->map[unitXPos][unitYPos - 1]]->team != unitTeam) {
+        return state->map[unitXPos][unitYPos - 1];
+    }
+    return -1;
+}
+static int downEnemy(AppState *state) {
+    int unitXPos = state->unitList[state->selected]->xpos;
+    int unitYPos = state->unitList[state->selected]->ypos;
+    Team unitTeam = state->unitList[state->selected]->team;
+    if (unitYPos < 9 && state->map[unitXPos][unitYPos + 1] != -1 
+    && state->unitList[state->map[unitXPos][unitYPos + 1]]->team != unitTeam) {
+        return state->map[unitXPos][unitYPos + 1];
+    }
+    return -1;
+}
+static int isAdjacentEnemy(AppState *state) {
+    return (leftEnemy(state) + rightEnemy(state) + upEnemy(state) + downEnemy(state) == -4) ? 0 : 1;
+    // if (leftEnemy(state) != -1) {return 1;}
+    // if (rightEnemy(state) != -1) {return 1;}
+    // if (upEnemy(state) != -1) {return 1;}
+    // if (downEnemy(state) != 1) {return 1;}
+    // return 0;
+}
 
 
 // This function processes your current app state and returns the new (i.e. next)
@@ -239,6 +288,16 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
                 nextAppState.unitList[currentAppState->currentMove->unitID]->hasMoved = 1;
                 return nextAppState;
             case ATTACK:
+                nextAppState.toAttackTargeting = 1;
+                if (upEnemy(currentAppState) != -1) {
+                    nextAppState.tSelector->ypos--;
+                } else if (leftEnemy(currentAppState) != -1) {
+                    nextAppState.tSelector->xpos--;
+                } else if (rightEnemy(currentAppState) != -1) {
+                    nextAppState.tSelector->xpos++;
+                } else if (downEnemy(currentAppState) != -1) {
+                    nextAppState.tSelector->ypos++;
+                }
                 return nextAppState;
             case ITEM:
                 return nextAppState;
@@ -262,9 +321,18 @@ AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u
     AppState nextAppState = *currentAppState;
     nextAppState.toMove = 0;
     if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
+        nextAppState.menu->attack = 0;
+        nextAppState.menu->item = 0;
+        nextAppState.menuSelectorPosition = 0;
+        int numItems = 0;
         nextAppState.toMenu = 1;
         nextAppState.menu->wait = 1;
-        nextAppState.menu->numItems = 1;
+        numItems++;
+        if (isAdjacentEnemy(currentAppState)) {
+            nextAppState.menu->attack = 1;
+            numItems++;
+        }
+        nextAppState.menu->numItems = numItems;
         return nextAppState;
     }
     if (KEY_JUST_PRESSED(BUTTON_B, keysPressedNow, keysPressedBefore)) {
@@ -356,6 +424,58 @@ AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u
     }
     return nextAppState;
 }
+AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, 
+    u32 keysPressedNow, CombatState *combatState) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toAttackTargeting = 0;
+    int unitXPos = currentAppState->unitList[currentAppState->selected]->xpos;
+    int unitYPos = currentAppState->unitList[currentAppState->selected]->ypos;
+    int leftId = leftEnemy(currentAppState);
+    int rightId = rightEnemy(currentAppState);
+    int upId = upEnemy(currentAppState);
+    int downId = downEnemy(currentAppState);
+    if (KEY_JUST_PRESSED(BUTTON_B, keysPressedNow, keysPressedBefore)) {
+        nextAppState.toMenu = 1;
+        nextAppState.tSelector->xpos = unitXPos;
+        nextAppState.tSelector->ypos = unitYPos;
+        return nextAppState;
+    }
+    if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
+        combatState->toAttack = 1;
+        combatState->toMap = 0;
+        combatState->counter = 0;
+        combatState->attacker = currentAppState->unitList[currentAppState->selected];
+        combatState->defender = currentAppState->unitList[currentAppState->map[currentAppState->tSelector->xpos][currentAppState->tSelector->ypos]];
+        nextAppState.tSelector->xpos = unitXPos;
+        nextAppState.tSelector->ypos = unitYPos;
+        nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
+        nextAppState.map[currentAppState->currentMove->startX + currentAppState->currentMove->dx]
+                [currentAppState->currentMove->startY + currentAppState->currentMove->dy] = currentAppState->currentMove->unitID;
+        return nextAppState;
+    }
+    if (KEY_JUST_PRESSED(BUTTON_LEFT, keysPressedNow, keysPressedBefore)) {
+        if (leftId != -1) {
+            nextAppState.tSelector->xpos = unitXPos - 1;
+            nextAppState.tSelector->ypos = unitYPos;
+        }
+    } else if (KEY_JUST_PRESSED(BUTTON_RIGHT, keysPressedNow, keysPressedBefore)) {
+        if (rightId != -1) {
+            nextAppState.tSelector->xpos = unitXPos + 1;
+            nextAppState.tSelector->ypos = unitYPos;
+        }
+    } else if (KEY_JUST_PRESSED(BUTTON_UP, keysPressedNow, keysPressedBefore)) {
+        if (upId != -1) {
+            nextAppState.tSelector->xpos = unitXPos;
+            nextAppState.tSelector->ypos = unitYPos - 1;
+        }
+    } else if (KEY_JUST_PRESSED(BUTTON_DOWN, keysPressedNow, keysPressedBefore)) {
+        if (downId != -1) {
+            nextAppState.tSelector->xpos = unitXPos;
+            nextAppState.tSelector->ypos = unitYPos + 1;
+        }
+    }
+    return nextAppState;
+}
 AppState processAppStateEnemy(AppState *currentAppState) {
     AppState nextAppState = *currentAppState;
     nextAppState.toEnemy = 0;
@@ -439,4 +559,13 @@ AppState processAppStateEnemyMove(AppState *currentAppState) {
     nextAppState.unitList[currentAppState->selected]->hasMoved = 1;
     nextAppState.toEnemy = 1;
     return nextAppState;
+}
+CombatState processCombatState(CombatState *combatState) {
+    CombatState newCombatState = *combatState;
+    newCombatState.toAttack = 0;
+    newCombatState.counter++;
+    if (newCombatState.counter > 120) {
+        newCombatState.toMap = 1;
+    }
+    return newCombatState;
 }

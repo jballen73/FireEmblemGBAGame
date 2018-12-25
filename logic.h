@@ -39,7 +39,7 @@ typedef struct {
 typedef struct {
     int xpos;
     int ypos;
-
+    int show;
 } TileSelector;
 typedef struct {
     int attack;
@@ -58,6 +58,13 @@ typedef struct {
 
 } Move;
 typedef struct {
+    Unit *attacker;
+    Unit *defender;
+    int toAttack;
+    int toMap;
+    int counter;
+} CombatState;
+typedef struct {
     // Store whether or not the game is over in this member:
     int gameOver;
 
@@ -72,6 +79,7 @@ typedef struct {
     int toMenu;
     int toMap;
     int toMove;
+    int toAttackTargeting;
     int toEnemy;
     int toEnemyMove;
 } AppState;
@@ -85,6 +93,8 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
 AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateEnemy(AppState *currentAppState);
 AppState processAppStateEnemyMove(AppState *currentAppState);
+AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow, CombatState *combatState);
+CombatState processCombatState(CombatState *combatState);
 // If you have anything else you need accessible from outside the logic.c
 // file, you can add them here. You likely won't.
 #endif

@@ -120,11 +120,15 @@ static void hideMenu(void) {
     menuWait->attr0 = ATTR0_HIDE;
     menuSelector->attr0 = ATTR0_HIDE;
 }
+static void hideTileSelector(void) {
+    tileSelector->attr0 = ATTR0_HIDE;
+}
 // This function will be used to draw everything about the app
 // including the background and whatnot.
 void fullDrawAppState(AppState *state) {
     // TA-TODO: IMPLEMENT.
-    UNUSED(state);
+    fillScreenDMA(WHITE);
+    drawAppStateMap(state);
 }
 
 // This function will be used to undraw (i.e. erase) things that might
@@ -138,7 +142,11 @@ void undrawAppState(AppState *state) {
 // For example, in a Snake game, draw the snake, the food, the score.
 void drawAppStateMap(AppState *state) {
     hideMenu();
-    drawTileSelector(state->tSelector->xpos * 16, state->tSelector->ypos * 16);
+    if (state->tSelector->show) {
+        drawTileSelector(state->tSelector->xpos * 16, state->tSelector->ypos * 16);
+    } else {
+        hideTileSelector();
+    }
     drawUnits(state);
     drawSprites();
 }
