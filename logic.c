@@ -24,6 +24,11 @@ void initializeAppState(AppState* appState) {
     newMenu->wait = 0;
     newMenu->numItems = 0;
 
+    ItemMenu *newItemMenu = malloc(sizeof(ItemMenu));
+    newItemMenu->position1 = 0;
+    newItemMenu->position2 = 0;
+    newItemMenu->position3 = 0;
+
     Move *newMove = malloc(sizeof(Move));
     newMove->unitID = -1;
     newMove->startX = 0;
@@ -48,6 +53,8 @@ void initializeAppState(AppState* appState) {
     blueUnit1->skl = 4;
     blueUnit1->spd = 6;
     blueUnit1->move = 4;
+    blueUnit1->items[0] = newIronSword();
+    blueUnit1->numItems = 1;
     appState->map[blueUnit1->xpos][blueUnit1->ypos] = blueUnit1->id;
 
     Unit *blueUnit2 = malloc(sizeof(Unit));
@@ -66,6 +73,10 @@ void initializeAppState(AppState* appState) {
     blueUnit2->skl = 3;
     blueUnit2->spd = 7;
     blueUnit2->move = 4;
+    blueUnit2->items[0] = newSteelSword();
+    blueUnit2->items[1] = newVulnerary();
+    blueUnit2->items[2] = newIronSword();
+    blueUnit2->numItems = 3;
     appState->map[blueUnit2->xpos][blueUnit2->ypos] = blueUnit2->id;
 
     Unit *redUnit1 = malloc(sizeof(Unit));
@@ -84,6 +95,8 @@ void initializeAppState(AppState* appState) {
     redUnit1->skl = 3;
     redUnit1->spd = 3;
     redUnit1->move = 3;
+    redUnit1->items[0] = newIronSword();
+    redUnit1->numItems = 1;
     appState->map[redUnit1->xpos][redUnit1->ypos] = redUnit1->id;
 
     Unit *redUnit2 = malloc(sizeof(Unit));
@@ -102,16 +115,20 @@ void initializeAppState(AppState* appState) {
     redUnit2->skl = 2;
     redUnit2->spd = 2;
     redUnit2->move = 2;
+    redUnit2->items[0] = newIronSword();
+    redUnit2->numItems = 1;
     appState->map[redUnit2->xpos][redUnit2->ypos] = redUnit2->id;
 
     appState->tSelector = newTileSelector;
     appState->menu = newMenu;
+    appState->itemMenu = newItemMenu;
     appState->currentMove = newMove;
     appState->menuSelectorPosition = 0;
     appState->toMenu = 0;
     appState->toMap = 0;
     appState->toMove = 0;
     appState->toAttackTargeting = 0;
+    appState->toItemMenu = 0;
     appState->toEnemy = 0;
     appState->toEnemyMove = 0;
     appState->selected = -1;
@@ -214,8 +231,71 @@ static int isAdjacentEnemy(AppState *state) {
     // if (downEnemy(state) != 1) {return 1;}
     // return 0;
 }
-
-
+static int getPositionNum(Item *item) {
+    switch(item->strength) {
+        case 3:
+            return 1;
+        case 6:
+            return 2;
+        case 10:
+            return 3;
+        default:
+            return 0;
+    }
+}
+static void buildItemMenu(AppState *state) {
+    Unit *currentUnit = state->unitList[state->selected];
+    state->itemMenu->position1 = getPositionNum(currentUnit->items[0]);
+    if (currentUnit->numItems == 1) {
+        state->itemMenu->position2 = 0;
+        state->itemMenu->position3 = 0;
+        return;
+    }
+    state->itemMenu->position2 = getPositionNum(currentUnit->items[1]);
+    if (currentUnit->numItems == 2) {
+        state->itemMenu->position3 = 0;
+        return;
+    }
+    state->itemMenu->position3 = getPositionNum(currentUnit->items[2]);
+}
+static int getItemMenuSelection(AppState *state) {
+    switch(state->menuSelectorPosition) {
+        case 0:
+            return state->itemMenu->position1;
+        case 1:
+            return state->itemMenu->position2;
+        case 2:
+            return state->itemMenu->position3;
+        default:
+            return 0;
+    }
+}
+static void swapItemToFront(Unit *unit, int position) {
+    Item *originalEquip = unit->items[0];
+    unit->items[0] = unit->items[position];
+    unit->items[position] = originalEquip;
+}
+static int min(int x, int y) {
+    return (x < y) ? x : y;
+}
+static void deleteItem(Unit *unit, int itemSlot) {
+    if (itemSlot == 4 || itemSlot + 1 == unit->numItems) {
+        unit->items[itemSlot] = NULL;
+        unit->numItems--;
+        return;
+    }
+    if (itemSlot == 0) {
+        for (int i = 1; i < unit->numItems; i++) {
+            if (unit->items[i]->type == WEAPON) {
+                swapItemToFront(unit, i);
+                deleteItem(unit, i);
+                return;
+            }
+        }
+    }
+    unit->items[itemSlot] = unit->items[itemSlot + 1];
+    deleteItem(unit, itemSlot + 1);
+}
 // This function processes your current app state and returns the new (i.e. next)
 // state of your application.
 AppState processAppStateMap(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow) {
@@ -300,6 +380,9 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
                 }
                 return nextAppState;
             case ITEM:
+                buildItemMenu(&nextAppState);
+                nextAppState.toItemMenu = 1;
+                nextAppState.menuSelectorPosition = 0;
                 return nextAppState;
         }
     }
@@ -328,8 +411,13 @@ AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u
         nextAppState.toMenu = 1;
         nextAppState.menu->wait = 1;
         numItems++;
-        if (isAdjacentEnemy(currentAppState)) {
+        if (isAdjacentEnemy(currentAppState) && currentAppState->unitList[currentAppState->selected]->numItems &&
+            currentAppState->unitList[currentAppState->selected]->items[0]->type == WEAPON) {
             nextAppState.menu->attack = 1;
+            numItems++;
+        }
+        if (currentAppState->unitList[currentAppState->selected]->numItems) {
+            nextAppState.menu->item = 1;
             numItems++;
         }
         nextAppState.menu->numItems = numItems;
@@ -472,6 +560,57 @@ AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPress
         if (downId != -1) {
             nextAppState.tSelector->xpos = unitXPos;
             nextAppState.tSelector->ypos = unitYPos + 1;
+        }
+    }
+    return nextAppState;
+}
+AppState processAppStateItemMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow) {
+    AppState nextAppState = *currentAppState;
+    nextAppState.toItemMenu = 0;
+    if (KEY_JUST_PRESSED(BUTTON_B, keysPressedNow, keysPressedBefore)) {
+        nextAppState.toMenu = 1;
+        nextAppState.menuSelectorPosition = 0;
+        return nextAppState;
+    }
+    if (KEY_JUST_PRESSED(BUTTON_A, keysPressedNow, keysPressedBefore)) {
+        int selection = getItemMenuSelection(currentAppState);
+        Unit *curUnit = nextAppState.unitList[currentAppState->selected];
+        switch (selection) {
+            case 1:
+                swapItemToFront(curUnit, currentAppState->menuSelectorPosition);
+                nextAppState.toMenu = 1;
+                nextAppState.menuSelectorPosition = 0;
+                return nextAppState;
+            case 2:
+                swapItemToFront(curUnit, currentAppState->menuSelectorPosition);
+                nextAppState.toMenu = 1;
+                nextAppState.menuSelectorPosition = 0;
+                return nextAppState;
+            case 3:
+                curUnit->curHP = min(curUnit->curHP + 10, curUnit->maxHP);
+                curUnit->items[currentAppState->menuSelectorPosition]->uses--;
+                if (!curUnit->items[currentAppState->menuSelectorPosition]->uses) {
+                    deleteItem(curUnit, currentAppState->menuSelectorPosition);
+                }
+                nextAppState.map[currentAppState->currentMove->startX + currentAppState->currentMove->dx]
+                [currentAppState->currentMove->startY + currentAppState->currentMove->dy] = currentAppState->currentMove->unitID;
+                curUnit->hasMoved = 1;
+                nextAppState.toMap = 1;
+                return nextAppState;
+            default:
+                nextAppState.toMenu = 1;
+                nextAppState.menuSelectorPosition = 0;
+                return nextAppState;
+        }
+    }
+    if (KEY_JUST_PRESSED(BUTTON_DOWN, keysPressedNow, keysPressedBefore)) {
+        if (currentAppState->menuSelectorPosition + 1 < currentAppState->unitList[currentAppState->selected]->numItems) {
+            nextAppState.menuSelectorPosition++;
+        }
+    }
+    if (KEY_JUST_PRESSED(BUTTON_UP, keysPressedNow, keysPressedBefore)) {
+        if (currentAppState->menuSelectorPosition > 0) {
+            nextAppState.menuSelectorPosition--;
         }
     }
     return nextAppState;

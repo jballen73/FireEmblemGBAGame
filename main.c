@@ -20,6 +20,7 @@ typedef enum {
     APP_ENEMY,
     APP_ENEMY_MOVE,
     APP_ATTACK_TARGETING,
+    APP_ITEM_MENU,
     APP_COMBAT_INIT,
     APP_COMBAT,
     APP_COMBAT_END,
@@ -102,6 +103,9 @@ int main(void) {
                 currentAppState.tSelector->show = 1;
                 state = APP_ATTACK_TARGETING;
             }
+            if (currentAppState.toItemMenu) {
+                state = APP_ITEM_MENU;
+            }
             break;
         case APP_MOVE:
             waitForVBlank();
@@ -115,6 +119,18 @@ int main(void) {
             if (currentAppState.toMenu) {
                 currentAppState.tSelector->show = 1;
                 state = APP_MENU;
+            }
+            break;
+        case APP_ITEM_MENU:
+            waitForVBlank();
+            nextAppState = processAppStateItemMenu(&currentAppState, previousButtons, currentButtons);
+            drawAppStateItemMenu(&nextAppState);
+            currentAppState = nextAppState;
+            if (currentAppState.toMenu) {
+                state = APP_MENU;
+            }
+            if (currentAppState.toMap) {
+                state = APP_MAP;
             }
             break;
         case APP_ENEMY:

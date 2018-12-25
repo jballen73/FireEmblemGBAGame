@@ -14,6 +14,9 @@ volatile OamEntry* menuWait = &shadow[3];
 volatile OamEntry* menuSelector = &shadow[1];
 volatile OamEntry* yourTurn = &shadow[5];
 volatile OamEntry* enemyTurn = &shadow[6];
+volatile OamEntry* ironSwordMenu = &shadow[7];
+volatile OamEntry* steelSwordMenu = &shadow[8];
+volatile OamEntry* vulneraryMenu = &shadow[9];
 
 volatile OamEntry* blueUnit1 = &shadow[BASE_UNIT_INDEX];
 volatile OamEntry* blueUnit2 = &shadow[BASE_UNIT_INDEX + 1];
@@ -47,6 +50,9 @@ void graphicsInit(void) {
     menuSelector->attr2 = MENUSELECTOR_PALETTE_ID | MENUSELECTOR_ID;
     yourTurn->attr2 = YOURTURN_PALETTE_ID | YOURTURN_ID;
     enemyTurn->attr2 = ENEMYTURN_PALETTE_ID | ENEMYTURN_ID;
+    ironSwordMenu->attr2 = IRONSWORDMENU_PALETTE_ID | IRONSWORDMENU_ID;
+    steelSwordMenu->attr2 = STEELSWORDMENU_PALETTE_ID | STEELSWORDMENU_ID;
+    vulneraryMenu->attr2 = VULNERARYMENU_PALETTE_ID | VULNERARYMENU_ID;
     blueUnit1->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     blueUnit2->attr2 = BLUECHARACTERSPRITE_PALETTE_ID | BLUECHARACTERSPRITE_ID;
     redUnit1->attr2 = REDCHARACTERSPRITE_PALETTE_ID | REDCHARACTERSPRITE_ID;
@@ -83,7 +89,32 @@ static void drawMenu(Menu* menu, int selectorPosition) {
         basey += 8;
     }
 }
-
+static void setItemMenuElementPosition(int positionValue, int xpos, int ypos) {
+    switch(positionValue) {
+        case 1:
+            ironSwordMenu->attr0 = ypos | SPRITES_PALETTE_TYPE | IRONSWORDMENU_SPRITE_SHAPE;
+            ironSwordMenu->attr1 = xpos | IRONSWORDMENU_SPRITE_SIZE;
+            break;
+        case 2:
+            steelSwordMenu->attr0 = ypos | SPRITES_PALETTE_TYPE | STEELSWORDMENU_SPRITE_SHAPE;
+            steelSwordMenu->attr1 = xpos | STEELSWORDMENU_SPRITE_SIZE;
+            break;
+        case 3:
+            vulneraryMenu->attr0 = ypos | SPRITES_PALETTE_TYPE | VULNERARYMENU_SPRITE_SHAPE;
+            vulneraryMenu->attr1 = xpos | VULNERARYMENU_SPRITE_SIZE;
+            break;
+    }
+}
+static void drawItemMenu(ItemMenu *itemMenu, int selectorPosition) {
+    ironSwordMenu->attr0 = ATTR0_HIDE;
+    steelSwordMenu->attr0 = ATTR0_HIDE;
+    vulneraryMenu->attr0 = ATTR0_HIDE;
+    menuSelector->attr0 = (56 + (8*selectorPosition)) | SPRITES_PALETTE_TYPE | MENUSELECTOR_SPRITE_SHAPE;
+    menuSelector->attr1 = 104 | MENUSELECTOR_SPRITE_SIZE;
+    setItemMenuElementPosition(itemMenu->position1, 104, 56);
+    setItemMenuElementPosition(itemMenu->position2, 104, 64);
+    setItemMenuElementPosition(itemMenu->position3, 104, 72);
+}
 static void drawUnits(AppState *state) {
     for (int i = 0; i < NUM_UNITS; i++) {
         Unit *curUnit = state->unitList[i];
@@ -120,6 +151,11 @@ static void hideMenu(void) {
     menuWait->attr0 = ATTR0_HIDE;
     menuSelector->attr0 = ATTR0_HIDE;
 }
+static void hideItemMenu(void) {
+    ironSwordMenu->attr0 = ATTR0_HIDE;
+    steelSwordMenu->attr0 = ATTR0_HIDE;
+    vulneraryMenu->attr0 = ATTR0_HIDE;
+}
 static void hideTileSelector(void) {
     tileSelector->attr0 = ATTR0_HIDE;
 }
@@ -142,6 +178,7 @@ void undrawAppState(AppState *state) {
 // For example, in a Snake game, draw the snake, the food, the score.
 void drawAppStateMap(AppState *state) {
     hideMenu();
+    hideItemMenu();
     if (state->tSelector->show) {
         drawTileSelector(state->tSelector->xpos * 16, state->tSelector->ypos * 16);
     } else {
@@ -152,7 +189,14 @@ void drawAppStateMap(AppState *state) {
 }
 void drawAppStateMenu(AppState *state) {
     tileSelector->attr0 = ATTR0_HIDE;
+    hideItemMenu();
     drawMenu(state->menu, state->menuSelectorPosition);
     drawSprites();
 
+}
+void drawAppStateItemMenu(AppState *state) {
+    hideMenu();
+    tileSelector->attr0 = ATTR0_HIDE;
+    drawItemMenu(state->itemMenu, state->menuSelectorPosition);
+    drawSprites();
 }

@@ -2,7 +2,7 @@
 #define LOGIC_SEEN
 
 #include "gba.h"
-
+#include "items.h"
 
 
 #define NUM_UNITS (4)
@@ -35,6 +35,9 @@ typedef struct {
     int skl;
     int spd;
     int move;
+
+    Item *items[5];
+    int numItems;
 } Unit;
 typedef struct {
     int xpos;
@@ -48,6 +51,11 @@ typedef struct {
     int numItems;
 
 } Menu;
+typedef struct {
+    int position1;
+    int position2;
+    int position3;
+} ItemMenu;
 typedef struct {
     int unitID;
     int startX;
@@ -70,6 +78,7 @@ typedef struct {
 
     TileSelector *tSelector;
     Menu *menu;
+    ItemMenu *itemMenu;
     Unit *unitList[NUM_UNITS];
     Move *currentMove;
     int map[15][10];
@@ -80,6 +89,7 @@ typedef struct {
     int toMap;
     int toMove;
     int toAttackTargeting;
+    int toItemMenu;
     int toEnemy;
     int toEnemyMove;
 } AppState;
@@ -93,6 +103,7 @@ AppState processAppStateMenu(AppState *currentAppState, u32 keysPressedBefore, u
 AppState processAppStateMove(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateEnemy(AppState *currentAppState);
 AppState processAppStateEnemyMove(AppState *currentAppState);
+AppState processAppStateItemMenu(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow);
 AppState processAppStateAttackTargeting(AppState *currentAppState, u32 keysPressedBefore, u32 keysPressedNow, CombatState *combatState);
 CombatState processCombatState(CombatState *combatState);
 // If you have anything else you need accessible from outside the logic.c

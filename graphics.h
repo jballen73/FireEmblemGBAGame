@@ -4,7 +4,7 @@
 #include "logic.h"
 
 
-#define BASE_UNIT_INDEX (7)
+#define BASE_UNIT_INDEX (10)
 // This function will be used to draw everything about the state of your app
 // including the background and whatnot.
 void fullDrawAppState(AppState *state);
@@ -17,7 +17,7 @@ void undrawAppState(AppState *state);
 // For example, in a Snake game, draw the snake, the food, the score.
 void drawAppStateMap(AppState *state);
 void drawAppStateMenu(AppState *state);
-
+void drawAppStateItemMenu(AppState *state);
 // If you have anything else you need accessible from outside the graphics.c
 // file, you can add them here. You likely won't.
 void graphicsInit(void);
